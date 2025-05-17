@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Container, Form, Button } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { toast } from 'react-hot-toast'; // Updated to use react-hot-toast
+import { toast } from 'react-hot-toast';
 import './signup.comp.css';
 
 const Signup = () => {
@@ -21,24 +21,28 @@ const Signup = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Optional: Simple front-end validation for required fields
+    if (!formData.name || !formData.email || !formData.password) {
+      toast.error('Please fill in all required fields.');
+      return;
+    }
+
     try {
-      // Send POST request to backend
-      const response = await axios.post('http://localhost:5000/api/users', formData);
-      console.log('User created:', response.data);
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000'}/api/users`,
+        formData,
+        { headers: { 'Content-Type': 'application/json' } }
+      );
 
-      // Store the JWT token in localStorage
       localStorage.setItem('token', response.data.token);
-
-      // Redirect to ticket page after successful signup
       navigate('/ticket');
     } catch (error) {
-      console.error('Error during signup:', error.response?.data || error.message);
       toast.error(error.response?.data?.error || 'Signup failed. Please try again.', { duration: 5000 });
     }
   };
@@ -55,6 +59,7 @@ const Signup = () => {
             placeholder="Enter your name"
             value={formData.name}
             onChange={handleChange}
+            required
           />
         </Form.Group>
         <Form.Group controlId="formDept" className="mb-3">
@@ -85,6 +90,8 @@ const Signup = () => {
             placeholder="Enter your email"
             value={formData.email}
             onChange={handleChange}
+            required
+            autoComplete="email"
           />
         </Form.Group>
         <Form.Group controlId="formContactNumber" className="mb-3">
@@ -109,11 +116,7 @@ const Signup = () => {
         </Form.Group>
         <Form.Group controlId="formRole" className="mb-3">
           <Form.Label>Role</Form.Label>
-          <Form.Select
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-          >
+          <Form.Select name="role" value={formData.role} onChange={handleChange} required>
             <option value="">Select Role</option>
             <option value="employee">Employee</option>
             <option value="admin">Admin</option>
@@ -127,6 +130,8 @@ const Signup = () => {
             placeholder="Enter your password"
             value={formData.password}
             onChange={handleChange}
+            required
+            autoComplete="new-password"
           />
         </Form.Group>
         <Button type="submit" className="signup-button">

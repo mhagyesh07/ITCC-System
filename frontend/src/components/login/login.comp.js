@@ -2,36 +2,28 @@ import React, { useState } from 'react';
 import { Container, Row, Col, Form, Button } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { toast } from 'react-hot-toast'; // Updated to use react-hot-toast
+import { toast } from 'react-hot-toast';
 import './login.comp.css';
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
-      [name]: value.trimStart(), // Prevent accidental leading spaces
+      [name]: value.trimStart(),
     }));
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent default form submission behavior
+    e.preventDefault();
 
-    // Simple front-end validation
     if (!formData.email || !formData.password) {
       toast.error('Both fields are required.');
       return;
     }
-
-    console.log('Email being sent to backend:', formData.email.trim());
-    console.log('Password being sent to backend:', formData.password);
 
     try {
       const response = await axios.post(
@@ -40,22 +32,12 @@ const Login = () => {
           email: formData.email.trim(),
           password: formData.password,
         },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
+        { headers: { 'Content-Type': 'application/json' } }
       );
 
-      console.log('Login successful:', response.data);
-
-      // Store token
       localStorage.setItem('token', response.data.token);
-
-      // Navigate
       navigate('/ticket');
     } catch (err) {
-      console.error('Error during login:', err.response?.data || err.message);
       if (err.response?.status === 401) {
         toast.error('Incorrect password. Please try again.', { duration: 5000 });
       } else {
@@ -78,6 +60,7 @@ const Login = () => {
                 placeholder="Enter your email"
                 value={formData.email}
                 onChange={handleChange}
+                autoComplete="username"
               />
             </Form.Group>
             <Form.Group controlId="formPassword" className="mb-3">
@@ -88,6 +71,7 @@ const Login = () => {
                 placeholder="Enter your password"
                 value={formData.password}
                 onChange={handleChange}
+                autoComplete="current-password"
               />
             </Form.Group>
             <Button variant="primary" type="submit" className="login-button">
