@@ -1,9 +1,11 @@
 const express = require('express');
 const Ticket = require('../models/Ticket');
+const { protect } = require('../middleware/authMiddleware');
+
 const router = express.Router();
 
-// Create a new ticket
-router.post('/', async (req, res) => {
+// Create a new ticket (protected)
+router.post('/', protect, async (req, res) => {
   try {
     const ticket = new Ticket(req.body);
     await ticket.save();
@@ -14,18 +16,13 @@ router.post('/', async (req, res) => {
 });
 
 // Get all tickets
-router.get('/', async (req, res) => {
+router.get('/', protect, async (req, res) => {
   try {
     const { limit, sort } = req.query;
     const query = Ticket.find().populate('employeeId');
 
-    if (sort) {
-      query.sort(sort);
-    }
-
-    if (limit) {
-      query.limit(parseInt(limit));
-    }
+    if (sort) query.sort(sort);
+    if (limit) query.limit(parseInt(limit));
 
     const tickets = await query;
     res.json(tickets);
@@ -34,8 +31,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Update admin comment for a specific ticket
-router.put('/:id/comment', async (req, res) => {
+// Update admin comment
+router.put('/:id/comment', protect, async (req, res) => {
   try {
     const { adminComment } = req.body;
     const ticket = await Ticket.findByIdAndUpdate(
@@ -44,27 +41,20 @@ router.put('/:id/comment', async (req, res) => {
       { new: true }
     );
 
-    if (!ticket) {
-      return res.status(404).json({ error: 'Ticket not found' });
-    }
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
 
     res.json({ message: 'Admin comment updated successfully', ticket });
   } catch (error) {
-    console.error('Error updating admin comment:', error);
     res.status(500).json({ error: 'Failed to update admin comment' });
   }
 });
 
-// Get a specific ticket by ID
-router.get('/:id', async (req, res) => {
+// Get specific ticket
+router.get('/:id', protect, async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id).populate('employeeId');
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
 
-    if (!ticket) {
-      return res.status(404).json({ error: 'Ticket not found' });
-    }
-
-    // Rename `dept` to `department` in the employeeId object
     if (ticket.employeeId) {
       ticket.employeeId = {
         ...ticket.employeeId.toObject(),
@@ -74,13 +64,12 @@ router.get('/:id', async (req, res) => {
 
     res.json(ticket);
   } catch (error) {
-    console.error('Error fetching ticket:', error);
     res.status(500).json({ error: 'Failed to fetch ticket' });
   }
 });
 
-// Close a specific ticket by ID
-router.put('/:id/close', async (req, res) => {
+// Close ticket
+router.put('/:id/close', protect, async (req, res) => {
   try {
     const ticket = await Ticket.findByIdAndUpdate(
       req.params.id,
@@ -88,13 +77,10 @@ router.put('/:id/close', async (req, res) => {
       { new: true }
     );
 
-    if (!ticket) {
-      return res.status(404).json({ error: 'Ticket not found' });
-    }
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
 
     res.json({ message: 'Ticket closed successfully', ticket });
   } catch (error) {
-    console.error('Error closing ticket:', error);
     res.status(500).json({ error: 'Failed to close ticket' });
   }
 });

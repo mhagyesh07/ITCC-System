@@ -5,27 +5,19 @@ const protect = (req, res, next) => {
 
   if (
     req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
+    req.headers.authorization.startsWith('Bearer ')
   ) {
     try {
-      // Get token from header
       token = req.headers.authorization.split(' ')[1];
-
-      // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      // Add user ID to request object
       req.user = decoded.id;
-
-      next();
+      return next();
     } catch (error) {
-      res.status(401).json({ error: 'Not authorized, token failed' });
+      return res.status(401).json({ error: 'Not authorized, token failed' });
     }
   }
 
-  if (!token) {
-    res.status(401).json({ error: 'Not authorized, no token' });
-  }
+  return res.status(401).json({ error: 'Not authorized, no token' });
 };
 
 module.exports = { protect };
